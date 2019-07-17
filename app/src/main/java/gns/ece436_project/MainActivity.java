@@ -20,10 +20,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        server = (CheckBox)findViewById(R.id.server);
+        server = findViewById(R.id.server);
         log = findViewById(R.id.log);
-        ip = (EditText)findViewById(R.id.ip);
-        do_test = (Button)findViewById(R.id.do_test);
+        ip = findViewById(R.id.ip);
+        do_test = findViewById(R.id.do_test);
+        addServerListener();
         addTestListener();
     }
 
@@ -31,9 +32,8 @@ public class MainActivity extends AppCompatActivity {
         server.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                // if enabled, disable
-                // if disabled, start listening
-                if (!server.isChecked()) {
+                // if enabled, disable; if disabled, start listening
+                if (server.isChecked()) {
                     server.setChecked(false);
                     log.append("\nSVR :: prep for socket reading...");
                     int port = 5000;
@@ -63,21 +63,32 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    public void sendPacket(String payload, String host, String proto, int port) {
+        switch (proto) {
+            case "UDP":
+                break;
+            case "TCP":
+                log.append("\nCLI :: Sending TCP packet...");
+                try {
+                    Socket socket = new Socket(host, port);
+                    OutputStream os = socket.getOutputStream();
+                    os.write(payload.getBytes("US-ASCII"));
+                    os.close();
+                    socket.close();
+                    break;
+                } catch (Exception e) {}
+        }
+    }
+
     public void addTestListener() {
         do_test.setOnClickListener(new OnClickListener()  {
             @Override
             public void onClick(View v) {
                 // send test packets in TCP for now
-                String host = ip.toString();
-                int port = 5000;
-                String buffer = "test exit";
-                try {
-                    Socket socket = new Socket(host, port);
-                    OutputStream os = socket.getOutputStream();
-                    os.write(buffer.getBytes("US-ASCII"));
-                    os.close();
-                    socket.close();
-                } catch (Exception e) {}
+                log.append("\nCLI :: Preparing to send packets...");
+                for (int i=0; i<10; i++) {
+                    sendPacket("test segment " + String.valueOf(i), ip.toString(), "TCP", 5000);
+                }
             }
         });
     }
